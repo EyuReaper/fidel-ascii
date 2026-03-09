@@ -4,6 +4,7 @@ import fs from "fs";
 import path from "path";
 import { fileURLToPath } from "url";
 import chalk from "chalk";
+import gradientString from "gradient-string";
 import { renderFidel } from "../engine/render.js";
 import { FidelFont } from "../types.js";
 
@@ -16,12 +17,17 @@ const cli = meow(
 	  $ fidel-ascii --text "ሰላም"
 
 	Options
-	  --text, -t   The text to render (required)
-	  --font, -f   Path to a custom font file (optional)
-	  --color, -c  Color for the output (optional: red, green, yellow, blue, magenta, cyan, white)
+	  --text, -t     The text to render (required)
+	  --font, -f     Path to a custom font file (optional)
+	  --color, -c    Color for the output (optional: red, green, yellow, blue, magenta, cyan, white)
+	  --shadow, -s   Add a pronounced 3D shadow effect
+	  --gradient, -g Apply a harmonious color gradient. Optionally provide a comma-separated list of colors.
+	  --wrap, -w     Enable line wrapping based on terminal width
 
 	Examples
-	  $ fidel-ascii --text "ሀለ" --color cyan
+	  $ fidel-ascii --text "ሀለ" --color cyan --shadow
+	  $ fidel-ascii --text "ሰላም" --gradient --shadow
+	  $ fidel-ascii --text "ኢትዮጵያ" --gradient "red,yellow,green" --shadow
 `,
   {
     importMeta: import.meta,
@@ -40,12 +46,26 @@ const cli = meow(
         shortFlag: "c",
         default: "white",
       },
+      shadow: {
+        type: "boolean",
+        shortFlag: "s",
+        default: false,
+      },
+      gradient: {
+        type: "string",
+        shortFlag: "g",
+      },
+      wrap: {
+        type: "boolean",
+        shortFlag: "w",
+        default: false,
+      },
     },
   }
 );
 
 async function main() {
-  const { text, font, color } = cli.flags;
+  const { text, font, color, shadow, wrap, gradient } = cli.flags;
 
   let fontData: FidelFont;
 
@@ -70,11 +90,27 @@ async function main() {
     }
   }
 
-  const result = renderFidel(text, fontData);
+  // Detect terminal width
+  const terminalWidth = process.stdout.columns || 80;
+  const renderOptions = {
+    maxWidth: wrap ? terminalWidth - 5 : Infinity,
+    shadow,
+  };
 
-  // Apply color
-  const coloredOutput = (chalk as any)[color] ? (chalk as any)[color](result) : result;
-  console.log(coloredOutput);
+  const rawOutput = renderFidel(text, fontData, renderOptions);
+
+  if (gradient !== undefined) {
+    const defaultPalette = ["#ff0000", "#ff7f00", "#ffff00", "#00ff00", "#0000ff", "#4b0082", "#9400d3"];
+    const userColors = gradient ? gradient.split(",").map(c => c.trim()) : defaultPalette;
+    
+    // Apply smooth gradient to the entire output
+    const g = (gradientString as any)(userColors);
+    console.log(g(rawOutput));
+  } else {
+    const coloredOutput = (chalk as any)[color] ? (chalk as any)[color](rawOutput) : rawOutput;
+    console.log(coloredOutput);
+  }
 }
+
 
 main();
