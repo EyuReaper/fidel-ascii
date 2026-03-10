@@ -45,14 +45,27 @@ Apply a smooth horizontal gradient (default):
 fidel-ascii --text "ኢትዮጵያ" --gradient --shadow
 ```
 
-### Vertical & Diagonal Gradients
-Control the flow of color using the `--direction` flag:
+### Vertical, Diagonal & Animated Gradients
+Control the flow of color or bring your banners to life:
 ```bash
 # Vertical transition
 fidel-ascii --text "ሰላም" --gradient "red,yellow,green" --direction vertical
 
 # Diagonal transition (45 degrees)
 fidel-ascii --text "ሀለሑ" --gradient "blue,magenta" --direction 45
+
+# Animated rainbow banner
+fidel-ascii --text "ኢትዮጵያ" --gradient --shadow --animate
+```
+
+### Dynamic Lighting & Shadows
+Choose where the light comes from to project different shadow styles:
+```bash
+# Shadow projects to the left
+fidel-ascii --text "ሀለ" --shadow --light right
+
+# Shadow projects to the top
+fidel-ascii --text "ሰላም" --shadow --light bottom
 ```
 
 ### Options
@@ -61,8 +74,10 @@ fidel-ascii --text "ሀለሑ" --gradient "blue,magenta" --direction 45
 | `--text` | `-t` | The Ethiopic text to render (Required) | - |
 | `--color` | `-c` | Basic chalk color (red, green, blue, etc.) | `white` |
 | `--gradient` | `-g` | Apply a vertical gradient (comma-separated colors) | `rainbow` |
-| `--direction`| `-d` | Direction of gradient: `horizontal`, `vertical`, or degrees (e.g. `45`) | `horizontal` |
+| `--direction`| `-d` | Direction of gradient: `horizontal`, `vertical`, or degrees | `horizontal` |
 | `--shadow` | `-s` | Add a 3D-style pronounced shadow | `false` |
+| `--light` | `-l` | Light source for shadow (top-left, top-right, etc.) | `top-left` |
+| `--animate` | `-a` | Animate the colors or light source | `false` |
 | `--wrap` | `-w` | Enable line wrapping based on terminal width | `false` |
 | `--font` | `-f` | Path to a custom `.fidel.json` font file | `standard` |
 

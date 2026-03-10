@@ -5,6 +5,7 @@ import path from "path";
 import { fileURLToPath } from "url";
 import chalk from "chalk";
 import gradientString from "gradient-string";
+import readline from "readline";
 import { renderFidel } from "../engine/render.js";
 import { FidelFont } from "../types.js";
 
@@ -20,14 +21,16 @@ const cli = meow(
 	  --text, -t       The text to render (required)
 	  --font, -f       Path to a custom font file (optional)
 	  --color, -c      Color for the output (optional: red, green, yellow, blue, magenta, cyan, white)
-	  --shadow, -s     Add a pronounced 3D shadow effect
+	  --shadow, -s     Add a 3D shadow effect
+	  --light, -l      Light source for shadow: top-left, top-right, top, bottom, left, right (default: top-left)
 	  --gradient, -g   Apply a harmonious color gradient. Optionally provide a comma-separated list of colors.
 	  --direction, -d  Direction of the gradient: "horizontal", "vertical", or a degree (e.g., "45")
+	  --animate, -a    Animate the colors or light source
 	  --wrap, -w       Enable line wrapping based on terminal width
 
 	Examples
 	  $ fidel-ascii --text "ሀለ" --color cyan --shadow
-	  $ fidel-ascii --text "ሰላም" --gradient --shadow
+	  $ fidel-ascii --text "ሰላም" --gradient --shadow --animate
 	  $ fidel-ascii --text "ኢትዮጵያ" --gradient "red,yellow,green" --direction 45 --shadow
 `,
   {
@@ -52,6 +55,11 @@ const cli = meow(
         shortFlag: "s",
         default: false,
       },
+      light: {
+        type: "string",
+        shortFlag: "l",
+        default: "top-left",
+      },
       gradient: {
         type: "string",
         shortFlag: "g",
@@ -60,6 +68,11 @@ const cli = meow(
         type: "string",
         shortFlag: "d",
         default: "horizontal",
+      },
+      animate: {
+        type: "boolean",
+        shortFlag: "a",
+        default: false,
       },
       wrap: {
         type: "boolean",
@@ -120,7 +133,7 @@ function getInterpolatedColor(colors: string[], t: number): { r: number; g: numb
 }
 
 async function main() {
-  const { text, font, color, shadow, wrap, gradient, direction } = cli.flags;
+  const { text, font, color, shadow, wrap, gradient, direction, animate, light } = cli.flags;
 
   let fontData: FidelFont;
 
@@ -147,60 +160,86 @@ async function main() {
 
   // Detect terminal width
   const terminalWidth = process.stdout.columns || 80;
-  const renderOptions = {
-    maxWidth: wrap ? terminalWidth - 5 : Infinity,
-    shadow,
-  };
+  
+  const renderLoop = (offset = 0) => {
+    const renderOptions: any = {
+      maxWidth: wrap ? terminalWidth - 5 : Infinity,
+      shadow,
+      lightSource: light,
+    };
 
-  const rawOutput = renderFidel(text, fontData, renderOptions);
+    const rawOutput = renderFidel(text, fontData, renderOptions);
+    let finalOutput = "";
 
-  if (gradient !== undefined) {
-    const defaultPalette = ["#ff0000", "#ffff00", "#00ff00", "#00ffff", "#0000ff", "#ff00ff"];
-    const userColors = gradient ? gradient.split(",").map(c => c.trim()) : defaultPalette;
-    
-    const isDegree = !isNaN(parseFloat(direction));
-    
-    if (isDegree) {
-      const angle = (parseFloat(direction) * Math.PI) / 180;
-      const lines = rawOutput.split("\n");
-      const height = lines.length;
-      const width = Math.max(...lines.map(l => l.length));
+    if (gradient !== undefined) {
+      const defaultPalette = ["#ff0000", "#ffff00", "#00ff00", "#00ffff", "#0000ff", "#ff00ff"];
+      const userColors = gradient ? gradient.split(",").map(c => c.trim()) : defaultPalette;
       
-      const cos = Math.cos(angle);
-      const sin = Math.sin(angle);
-      
-      // Calculate min and max projections to normalize t
-      let minP = Infinity;
-      let maxP = -Infinity;
-      for (let y = 0; y < height; y++) {
-        for (let x = 0; x < width; x++) {
-          const p = x * cos + y * sin;
-          if (p < minP) minP = p;
-          if (p > maxP) maxP = p;
+      // Shift colors for animation
+      const shiftedColors = [...userColors];
+      if (animate) {
+        const shift = Math.floor(offset) % shiftedColors.length;
+        for (let i = 0; i < shift; i++) {
+          shiftedColors.push(shiftedColors.shift()!);
         }
       }
 
-      const coloredOutput = lines.map((line, y) => {
-        return Array.from(line).map((char, x) => {
-          if (char === " " || char === "\n") return char;
-          const p = x * cos + y * sin;
-          const t = (p - minP) / (maxP - minP || 1);
-          const rgb = getInterpolatedColor(userColors, t);
-          return chalk.rgb(rgb.r, rgb.g, rgb.b)(char);
-        }).join("");
-      }).join("\n");
+      const isDegree = !isNaN(parseFloat(direction));
       
-      console.log(coloredOutput);
-    } else if (direction === "vertical") {
-      const g = (gradientString as any)(userColors);
-      console.log(g.multiline(rawOutput));
+      if (isDegree) {
+        const angle = (parseFloat(direction) * Math.PI) / 180;
+        const lines = rawOutput.split("\n");
+        const height = lines.length;
+        const width = Math.max(...lines.map(l => l.length));
+        
+        const cos = Math.cos(angle);
+        const sin = Math.sin(angle);
+        
+        let minP = Infinity;
+        let maxP = -Infinity;
+        for (let y = 0; y < height; y++) {
+          for (let x = 0; x < width; x++) {
+            const p = x * cos + y * sin;
+            if (p < minP) minP = p;
+            if (p > maxP) maxP = p;
+          }
+        }
+
+        finalOutput = lines.map((line, y) => {
+          return Array.from(line).map((char, x) => {
+            if (char === " " || char === "\n") return char;
+            const p = x * cos + y * sin;
+            const t = (p - minP) / (maxP - minP || 1);
+            const rgb = getInterpolatedColor(shiftedColors, t);
+            return chalk.rgb(rgb.r, rgb.g, rgb.b)(char);
+          }).join("");
+        }).join("\n");
+      } else if (direction === "vertical") {
+        const g = (gradientString as any)(shiftedColors);
+        finalOutput = g.multiline(rawOutput);
+      } else {
+        const g = (gradientString as any)(shiftedColors);
+        finalOutput = g(rawOutput);
+      }
     } else {
-      const g = (gradientString as any)(userColors);
-      console.log(g(rawOutput));
+      finalOutput = (chalk as any)[color] ? (chalk as any)[color](rawOutput) : rawOutput;
     }
+
+    if (animate) {
+      process.stdout.write("\x1b[?25l"); // Hide cursor
+      process.stdout.write("\x1b[H"); // Home
+      console.log(finalOutput);
+      setTimeout(() => renderLoop(offset + 0.2), 50);
+    } else {
+      console.log(finalOutput);
+    }
+  };
+
+  if (animate) {
+    process.stdout.write("\x1b[2J"); // Clear screen
+    renderLoop();
   } else {
-    const coloredOutput = (chalk as any)[color] ? (chalk as any)[color](rawOutput) : rawOutput;
-    console.log(coloredOutput);
+    renderLoop();
   }
 }
 

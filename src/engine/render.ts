@@ -6,9 +6,11 @@ import { FidelFont } from "../types.js";
 export interface RenderOptions {
   /** Maximum width of a single line of ASCII. If exceeded, the text will wrap. */
   maxWidth?: number;
-  /** Whether to add a simple shadow effect. */
+  /** Whether to add a shadow effect. */
   shadow?: boolean;
-  /** An array of colors for a vertical gradient (one color per line of the font). */
+  /** Direction of the light source for the shadow. */
+  lightSource?: "top-left" | "top-right" | "top" | "bottom" | "left" | "right";
+  /** An array of colors for a vertical gradient. */
   gradient?: string[];
 }
 
@@ -68,7 +70,7 @@ export function renderFidel(text: string, font: FidelFont, options: RenderOption
 
   // Post-process blocks for shadow
   if (options.shadow) {
-    allBlocks = allBlocks.map(block => applyShadow(block));
+    allBlocks = allBlocks.map(block => applyDirectionalShadow(block, options.lightSource || "top-left"));
   }
 
   // Combine blocks into a single string
@@ -76,19 +78,49 @@ export function renderFidel(text: string, font: FidelFont, options: RenderOption
 }
 
 /**
- * Applies a 3D-style shadow effect to a block of ASCII lines.
+ * Applies a directional shadow effect based on light source.
  */
-function applyShadow(block: string[]): string[] {
+function applyDirectionalShadow(block: string[], light: string): string[] {
   const shadowChar = "░";
-  const result = block.map(line => {
-    // Replace trailing spaces with shadow if preceded by a block
-    return line.replace(/█( +)/g, (match, spaces) => "█" + shadowChar + " ".repeat(spaces.length - 1)) + shadowChar;
+  const height = block.length;
+  const width = Math.max(...block.map(l => l.length));
+  
+  // Create a grid for easier manipulation
+  const grid = block.map(line => line.padEnd(width, " ").split(""));
+  const shadowGrid = Array(height).fill(null).map(() => Array(width).fill(" "));
+
+  for (let y = 0; y < height; y++) {
+    for (let x = 0; x < width; x++) {
+      if (grid[y][x] === "█") {
+        // Project shadow based on light direction
+        let sx = x, sy = y;
+        if (light.includes("top")) sy++;
+        if (light.includes("bottom")) sy--;
+        if (light.includes("left")) sx++;
+        if (light.includes("right")) sx--;
+
+        if (sx >= 0 && sx < width && sy >= 0 && sy < height) {
+          if (grid[sy][sx] !== "█") {
+            shadowGrid[sy][sx] = shadowChar;
+          }
+        } else if (sy === height && light.includes("top")) {
+          // Allow one extra line for bottom shadow if light is from top
+          if (!shadowGrid[sy]) shadowGrid[sy] = Array(width).fill(" ");
+          shadowGrid[sy][sx] = shadowChar;
+        }
+      }
+    }
+  }
+
+  // Merge grid and shadowGrid
+  const result = grid.map((line, y) => {
+    return line.map((char, x) => (char === "█" ? "█" : shadowGrid[y][x] || " ")).join("");
   });
 
-  // Add a shadow line at the bottom
-  const lastLine = block[block.length - 1];
-  const shadowBottom = lastLine.replace(/█/g, shadowChar).replace(/[^░]/g, " ");
-  result.push(shadowBottom);
-  
+  // Add the extra shadow line if it exists
+  if (shadowGrid[height]) {
+    result.push(shadowGrid[height].join(""));
+  }
+
   return result;
 }
