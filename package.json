@@ -1,10 +1,14 @@
 {
   "name": "fidel-ascii",
   "version": "1.0.0",
-  "description": "Ethiopic character map and ASCII rendering engine",
+  "description": "The first open-source Ethiopic character map and high-impact ASCII rendering engine for terminals.",
   "type": "module",
   "bin": {
     "fidel-ascii": "./dist/cli/index.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/eyug/fidel-ascii.git"
   },
   "scripts": {
     "build": "tsc",
@@ -15,9 +19,12 @@
     "fidel",
     "ascii",
     "ethiopic",
-    "amharic"
+    "amharic",
+    "terminal",
+    "banner",
+    "geez"
   ],
-  "author": "",
+  "author": "EyuReaper",
   "license": "MIT",
   "dependencies": {
     "@types/node": "^22.0.0",
