@@ -10,6 +10,7 @@
 
 - **Multi-Form Syllabary:** Supports the 7 forms of the Ge'ez syllabary (currently expanding).
 - **Smooth Gradients:** Beautiful, harmonious vertical and horizontal color transitions using `gradient-string`.
+- **Dynamic Borders:** Add professional ASCII borders with customizable styles (solid, double, dotted, bold) and colors.
 - **3D Shadows:** Pronounced, stylized shadow effects for high-impact terminal banners.
 - **Auto-Wrapping:** Smart line wrapping based on terminal width to prevent layout breaking.
 - **Custom Palettes:** Support for user-defined color gradients via simple CLI flags.
@@ -32,6 +33,16 @@ Render Ethiopic text as large ASCII banners with various styles and effects.
 ### Basic Rendering
 ```bash
 fidel-ascii --text "ሰላም"
+```
+
+### Dynamic Borders
+Wrap your banners in stylized borders:
+```bash
+# Solid border (default)
+fidel-ascii --text "ሰላም" --border --border-color green
+
+# Double border with thickness (padding)
+fidel-ascii --text "ሀለ" --border --border-style double --border-thickness 2 --border-color yellow
 ```
 
 ### With Color and Shadow
@@ -79,6 +90,10 @@ fidel-ascii --text "ሰላም" --shadow --light bottom
 | `--light` | `-l` | Light source for shadow (top-left, top-right, etc.) | `top-left` |
 | `--animate` | `-a` | Animate the colors or light source | `false` |
 | `--wrap` | `-w` | Enable line wrapping based on terminal width | `false` |
+| `--border` | `-b` | Add a stylized border around the output | `false` |
+| `--border-style` | - | Style: `solid`, `double`, `dotted`, `bold` | `solid` |
+| `--border-color` | - | Color name for the border only | - |
+| `--border-thickness`| - | Internal padding / thickness | `1` |
 | `--font` | `-f` | Path to a custom `.fidel.json` font file | `standard` |
 
 ---
@@ -93,6 +108,8 @@ import fontData from 'fidel-ascii/fonts/standard.fidel.json';
 
 const ascii = renderFidel("ሰላም", fontData, {
   shadow: true,
+  border: true,
+  borderStyle: 'double',
   maxWidth: 80
 });
 
