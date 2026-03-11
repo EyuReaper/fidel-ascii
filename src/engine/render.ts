@@ -1,18 +1,4 @@
-import { FidelFont } from "../types.js";
-
-/**
- * Options for rendering Fidel ASCII.
- */
-export interface RenderOptions {
-  /** Maximum width of a single line of ASCII. If exceeded, the text will wrap. */
-  maxWidth?: number;
-  /** Whether to add a shadow effect. */
-  shadow?: boolean;
-  /** Direction of the light source for the shadow. */
-  lightSource?: "top-left" | "top-right" | "top" | "bottom" | "left" | "right";
-  /** An array of colors for a vertical gradient. */
-  gradient?: string[];
-}
+import { FidelFont, RenderOptions } from "../types.js";
 
 /**
  * Returns a fallback glyph for characters not present in the font map.
@@ -73,8 +59,59 @@ export function renderFidel(text: string, font: FidelFont, options: RenderOption
     allBlocks = allBlocks.map(block => applyDirectionalShadow(block, options.lightSource || "top-left"));
   }
 
+  // Post-process blocks for border
+  if (options.border) {
+    allBlocks = allBlocks.map(block => applyBorder(block, options));
+  }
+
   // Combine blocks into a single string
   return allBlocks.map(block => block.join("\n")).join("\n\n");
+}
+
+/**
+ * Applies a border around a block of ASCII text.
+ */
+function applyBorder(block: string[], options: RenderOptions): string[] {
+  const thickness = options.borderThickness || 1;
+  const style = options.borderStyle || "solid";
+  
+  const chars = {
+    solid: { tl: "┌", tr: "┐", bl: "└", br: "┘", h: "─", v: "│" },
+    double: { tl: "╔", tr: "╗", bl: "╚", br: "╝", h: "═", v: "║" },
+    dotted: { tl: "•", tr: "•", bl: "•", br: "•", h: "·", v: "·" },
+    bold: { tl: "┏", tr: "┓", bl: "┗", br: "┛", h: "━", v: "┃" }
+  }[style] || { tl: "+", tr: "+", bl: "+", br: "+", h: "-", v: "|" };
+
+  const contentWidth = Math.max(...block.map(l => l.length));
+  const totalWidth = contentWidth + 2 + (thickness - 1) * 2;
+  
+  const result: string[] = [];
+
+  // Top border
+  for (let t = 0; t < thickness; t++) {
+    if (t === 0) {
+      result.push(chars.tl + chars.h.repeat(totalWidth - 2) + chars.tr);
+    } else {
+      result.push(chars.v + " ".repeat(totalWidth - 2) + chars.v);
+    }
+  }
+
+  // Content with side borders
+  for (const line of block) {
+    const paddedLine = line.padEnd(contentWidth, " ");
+    result.push(chars.v + " ".repeat(thickness - 1) + paddedLine + " ".repeat(thickness - 1) + chars.v);
+  }
+
+  // Bottom border
+  for (let t = 0; t < thickness; t++) {
+    if (t === thickness - 1) {
+      result.push(chars.bl + chars.h.repeat(totalWidth - 2) + chars.br);
+    } else {
+      result.push(chars.v + " ".repeat(totalWidth - 2) + chars.v);
+    }
+  }
+
+  return result;
 }
 
 /**
@@ -87,7 +124,7 @@ function applyDirectionalShadow(block: string[], light: string): string[] {
   
   // Create a grid for easier manipulation
   const grid = block.map(line => line.padEnd(width, " ").split(""));
-  const shadowGrid = Array(height).fill(null).map(() => Array(width).fill(" "));
+  const shadowGrid: string[][] = Array.from({ length: height + 1 }, () => Array(width + 1).fill(" "));
 
   for (let y = 0; y < height; y++) {
     for (let x = 0; x < width; x++) {
@@ -99,14 +136,14 @@ function applyDirectionalShadow(block: string[], light: string): string[] {
         if (light.includes("left")) sx++;
         if (light.includes("right")) sx--;
 
-        if (sx >= 0 && sx < width && sy >= 0 && sy < height) {
-          if (grid[sy][sx] !== "█") {
+        if (sx >= 0 && sx < width + 1 && sy >= 0 && sy < height + 1) {
+          if (sy < height && sx < width) {
+            if (grid[sy][sx] !== "█") {
+              shadowGrid[sy][sx] = shadowChar;
+            }
+          } else {
             shadowGrid[sy][sx] = shadowChar;
           }
-        } else if (sy === height && light.includes("top")) {
-          // Allow one extra line for bottom shadow if light is from top
-          if (!shadowGrid[sy]) shadowGrid[sy] = Array(width).fill(" ");
-          shadowGrid[sy][sx] = shadowChar;
         }
       }
     }
@@ -117,9 +154,10 @@ function applyDirectionalShadow(block: string[], light: string): string[] {
     return line.map((char, x) => (char === "█" ? "█" : shadowGrid[y][x] || " ")).join("");
   });
 
-  // Add the extra shadow line if it exists
-  if (shadowGrid[height]) {
-    result.push(shadowGrid[height].join(""));
+  // Add the extra shadow line if it exists and contains shadow characters
+  const lastShadowLine = shadowGrid[height].join("").trimEnd();
+  if (lastShadowLine) {
+    result.push(lastShadowLine);
   }
 
   return result;

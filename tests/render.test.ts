@@ -50,4 +50,32 @@ describe("renderFidel Engine", () => {
     expect(lines).toHaveLength(3);
     expect(lines[2]).toContain("░");
   });
+
+  test("should apply border around the text", () => {
+    const result = renderFidel("ሀ", mockFont, { border: true });
+    const lines = result.split("\n");
+    // Original height 2 + 2 for top and bottom borders = 4
+    expect(lines).toHaveLength(4);
+    // Top border
+    expect(lines[0]).toMatch(/^[┌─┐]+$/);
+    // Content with side borders
+    expect(lines[1]).toMatch(/^│.*│$/);
+    // Bottom border
+    expect(lines[3]).toMatch(/^[└─┘]+$/);
+  });
+
+  test("should apply border to each wrapped block", () => {
+    // Each char is 2 wide + 2 kerning = 4. maxWidth 5 forces wrap.
+    const result = renderFidel("ሀለ", mockFont, { border: true, maxWidth: 5 });
+    const blocks = result.split("\n\n");
+    expect(blocks).toHaveLength(2);
+    
+    // Each block should have a border
+    for (const block of blocks) {
+      const lines = block.split("\n");
+      expect(lines).toHaveLength(4);
+      expect(lines[0]).toMatch(/^[┌─┐]+$/);
+      expect(lines[3]).toMatch(/^[└─┘]+$/);
+    }
+  });
 });

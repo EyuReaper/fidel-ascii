@@ -27,6 +27,10 @@ const cli = meow(
 	  --direction, -d  Direction of the gradient: "horizontal", "vertical", or a degree (e.g., "45")
 	  --animate, -a    Animate the colors or light source
 	  --wrap, -w       Enable line wrapping based on terminal width
+	  --border, -b     Add a border around the output
+	  --border-thickness  Thickness of the border (default: 1)
+	  --border-style      Style of the border: solid, double, dotted, bold (default: solid)
+	  --border-color      Color of the border (optional)
 
 	Examples
 	  $ fidel-ascii --text "ሀለ" --color cyan --shadow
@@ -78,6 +82,22 @@ const cli = meow(
         type: "boolean",
         shortFlag: "w",
         default: false,
+      },
+      border: {
+        type: "boolean",
+        shortFlag: "b",
+        default: false,
+      },
+      borderThickness: {
+        type: "number",
+        default: 1,
+      },
+      borderStyle: {
+        type: "string",
+        default: "solid",
+      },
+      borderColor: {
+        type: "string",
       },
     },
   }
@@ -133,7 +153,10 @@ function getInterpolatedColor(colors: string[], t: number): { r: number; g: numb
 }
 
 async function main() {
-  const { text, font, color, shadow, wrap, gradient, direction, animate, light } = cli.flags;
+  const { 
+    text, font, color, shadow, wrap, gradient, direction, animate, light,
+    border, borderThickness, borderStyle, borderColor
+  } = cli.flags;
 
   let fontData: FidelFont;
 
@@ -166,10 +189,45 @@ async function main() {
       maxWidth: wrap ? terminalWidth - 5 : Infinity,
       shadow,
       lightSource: light,
+      border,
+      borderThickness,
+      borderStyle: borderStyle as any,
     };
 
     const rawOutput = renderFidel(text, fontData, renderOptions);
     let finalOutput = "";
+
+    // Apply border color if specified and no gradient is active
+    let coloredOutput = rawOutput;
+    if (border && borderColor && gradient === undefined) {
+      const blocks = rawOutput.split("\n\n");
+      const coloredBlocks = blocks.map(block => {
+        const borderLines = block.split("\n");
+        const topBorderHeight = borderThickness || 1;
+        const bottomBorderHeight = borderThickness || 1;
+        
+        const coloredLines = borderLines.map((line, i) => {
+          const isTopBorder = i < topBorderHeight;
+          const isBottomBorder = i >= borderLines.length - bottomBorderHeight;
+          const isSideBorder = !isTopBorder && !isBottomBorder;
+          
+          if (isTopBorder || isBottomBorder) {
+            return (chalk as any)[borderColor] ? (chalk as any)[borderColor](line) : line;
+          } else if (isSideBorder) {
+            // Color only the first and last characters (vertical borders)
+            const left = line.slice(0, 1);
+            const right = line.slice(-1);
+            const middle = line.slice(1, -1);
+            const coloredLeft = (chalk as any)[borderColor] ? (chalk as any)[borderColor](left) : left;
+            const coloredRight = (chalk as any)[borderColor] ? (chalk as any)[borderColor](right) : right;
+            return coloredLeft + middle + coloredRight;
+          }
+          return line;
+        });
+        return coloredLines.join("\n");
+      });
+      coloredOutput = coloredBlocks.join("\n\n");
+    }
 
     if (gradient !== undefined) {
       const defaultPalette = ["#ff0000", "#ffff00", "#00ff00", "#00ffff", "#0000ff", "#ff00ff"];
@@ -222,7 +280,7 @@ async function main() {
         finalOutput = g(rawOutput);
       }
     } else {
-      finalOutput = (chalk as any)[color] ? (chalk as any)[color](rawOutput) : rawOutput;
+      finalOutput = (chalk as any)[color] ? (chalk as any)[color](coloredOutput) : coloredOutput;
     }
 
     if (animate) {
