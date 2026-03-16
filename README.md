@@ -8,13 +8,30 @@
 
 ## 🚀 Features
 
-- **Multi-Form Syllabary:** Supports the 7 forms of the Ge'ez syllabary (currently expanding).
+- **Multi-Form Syllabary:** Supports the 7 forms of the Ge'ez syllabary (ሀ-ፑ, ሂ-ቪ, ዮ, etc.).
+- **Symbol Support:** Full mapping for common punctuation and logic symbols (`!`, `.`, `,`, `:`, `>`, `<`, `(`, `)`, etc.).
+- **Tight Rendering:** Optimized engine with variable-width kerning and trailing space removal for compact, legible banners.
 - **Smooth Gradients:** Beautiful, harmonious vertical and horizontal color transitions using `gradient-string`.
 - **Dynamic Borders:** Add professional ASCII borders with customizable styles (solid, double, dotted, bold) and colors.
 - **3D Shadows:** Pronounced, stylized shadow effects for high-impact terminal banners.
 - **Auto-Wrapping:** Smart line wrapping based on terminal width to prevent layout breaking.
-- **Custom Palettes:** Support for user-defined color gradients via simple CLI flags.
 - **Library Mode:** Use the rendering engine directly in your own Node.js/TypeScript projects.
+
+## 🎨 High-Impact Visuals
+
+Fidel-ASCII isn't just a character map; it's a rendering engine designed for maximum terminal impact.
+
+### "Tight" Rendering with Shadows & Double Borders
+```text
+╔═══════════════════════════════════════════════════════════════════════════╗
+║  ██ █       ██   ███     █    ███   █   ██    ██       ██     ██   ███████║
+║ █ ░░██       █░  █░███  █ ██  █░█░  █░   ░█    ░██     ██░     ██  █░█░█░█║
+║ █░   ███   █████  █ ░░░  █ ░░ ██ ░  █░    █░     ░█  ██████   █ ██ ███░███║
+║ █░   █░█░   ░█░░░  █    █ ██   ░█    ░    █░    ██ ░ █░░░░█░ █ ░██░ █░░ ░░║
+║  ██  █░██    █░     █  █ ░██░ ███░  █   ██ ░  ██ ░░  █░   █░  ░ ██░█ ░    ║
+║   ░░  ░ ░░    ░      ░  ░  ░░  ░░░   ░   ░░    ░░     ░    ░     ░░ ░     ║
+╚═══════════════════════════════════════════════════════════════════════════╝
+```
 
 ---
 
@@ -30,53 +47,23 @@ npm install -g fidel-ascii
 
 Render Ethiopic text as large ASCII banners with various styles and effects.
 
+> **Note:** Always wrap multi-word strings or text with spaces in **double quotes** (e.g., `--text "ጃኖ ፊደል"`) to ensure the shell parses them correctly.
+
 ### Basic Rendering
 ```bash
 fidel-ascii --text "ሰላም"
 ```
 
+### Mixed Content & Symbols
+```bash
+fidel-ascii --text "(ኢትዮጵያ!) > ሰላም" --border --shadow
+```
+
 ### Dynamic Borders
 Wrap your banners in stylized borders:
 ```bash
-# Solid border (default)
-fidel-ascii --text "ሰላም" --border --border-color green
-
 # Double border with thickness (padding)
 fidel-ascii --text "ሀለ" --border --border-style double --border-thickness 2 --border-color yellow
-```
-
-### With Color and Shadow
-```bash
-fidel-ascii --text "ሀለ" --color cyan --shadow
-```
-
-### Harmonious Gradients
-Apply a smooth horizontal gradient (default):
-```bash
-fidel-ascii --text "ኢትዮጵያ" --gradient --shadow
-```
-
-### Vertical, Diagonal & Animated Gradients
-Control the flow of color or bring your banners to life:
-```bash
-# Vertical transition
-fidel-ascii --text "ሰላም" --gradient "red,yellow,green" --direction vertical
-
-# Diagonal transition (45 degrees)
-fidel-ascii --text "ሀለሑ" --gradient "blue,magenta" --direction 45
-
-# Animated rainbow banner
-fidel-ascii --text "ኢትዮጵያ" --gradient --shadow --animate
-```
-
-### Dynamic Lighting & Shadows
-Choose where the light comes from to project different shadow styles:
-```bash
-# Shadow projects to the left
-fidel-ascii --text "ሀለ" --shadow --light right
-
-# Shadow projects to the top
-fidel-ascii --text "ሰላም" --shadow --light bottom
 ```
 
 ### Options
@@ -92,15 +79,13 @@ fidel-ascii --text "ሰላም" --shadow --light bottom
 | `--wrap` | `-w` | Enable line wrapping based on terminal width | `false` |
 | `--border` | `-b` | Add a stylized border around the output | `false` |
 | `--border-style` | - | Style: `solid`, `double`, `dotted`, `bold` | `solid` |
-| `--border-color` | - | Color name for the border only | - |
-| `--border-thickness`| - | Internal padding / thickness | `1` |
 | `--font` | `-f` | Path to a custom `.fidel.json` font file | `standard` |
 
 ---
 
 ## 🧩 Programmatic API
 
-You can also use the engine in your own TypeScript/JavaScript projects:
+Use the rendering engine in your own TypeScript/JavaScript projects. See [API.md](API.md) for full documentation.
 
 ```typescript
 import { renderFidel } from 'fidel-ascii';
@@ -109,27 +94,10 @@ import fontData from 'fidel-ascii/fonts/standard.fidel.json';
 const ascii = renderFidel("ሰላም", fontData, {
   shadow: true,
   border: true,
-  borderStyle: 'double',
-  maxWidth: 80
+  borderStyle: 'double'
 });
 
 console.log(ascii);
-```
-
----
-
-## 🎨 Tooling: Fidel Builder
-
-The project includes a React-based web tool for drawing and exporting custom glyphs.
-
-- **Load Existing:** Paste character JSON to edit existing glyphs.
-- **Ghosting:** Overlay a reference character to maintain visual consistency across forms.
-
-To run the builder locally:
-```bash
-cd tools/fidel-builder
-npm install
-npm run dev
 ```
 
 ---

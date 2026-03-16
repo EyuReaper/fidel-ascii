@@ -29,13 +29,15 @@ export function renderFidel(text: string, font: FidelFont, options: RenderOption
 
   for (const char of chars) {
     const rawGlyph = font.glyphs[char] || getFallback(font);
-    const glyphLines = rawGlyph.slice(0, height);
+    // Trim each line of the glyph to remove unnecessary trailing whitespace
+    const glyphLines = rawGlyph.slice(0, height).map(line => line.trimEnd());
     
     while (glyphLines.length < height) {
       glyphLines.push("");
     }
 
     const glyphWidth = Math.max(...glyphLines.map(line => line.length));
+    const kerning = 1; // Reduced from 2 for tighter feel
     const totalAddedWidth = glyphWidth + kerning;
 
     if (currentBlockWidth + totalAddedWidth > maxWidth && currentBlockWidth > 0) {
