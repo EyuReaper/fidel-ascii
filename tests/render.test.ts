@@ -25,8 +25,8 @@ describe("renderFidel Engine", () => {
   test("should render multiple characters with kerning", () => {
     const result = renderFidel("ሀለ", mockFont);
     const lines = result.split("\n");
-    // "██" + 2 spaces + " █" = "██   █"
-    expect(lines[0]).toBe("██   █");
+    // "██" + 1 space + " █" = "██  █"
+    expect(lines[0]).toBe("██  █");
   });
 
   test("should use fallback for unknown characters", () => {
@@ -35,8 +35,11 @@ describe("renderFidel Engine", () => {
   });
 
   test("should wrap text based on maxWidth", () => {
-    // Each char + kerning is 4 wide. maxWidth 5 should wrap after 1st char.
-    const result = renderFidel("ሀለ", mockFont, { maxWidth: 5 });
+    // Each char + kerning is 3 wide. maxWidth 5 should allow 'ሀ' and maybe more?
+    // "██" (2) + " " (1) + " █" (2) = 5
+    // maxWidth 5 should allow BOTH 'ሀ' and 'ለ' on one line now.
+    // Let's set maxWidth to 2 to force wrap after 1st char.
+    const result = renderFidel("ሀለ", mockFont, { maxWidth: 2 });
     const blocks = result.split("\n\n");
     expect(blocks).toHaveLength(2);
     expect(blocks[0]).toContain("██"); // 'ሀ'
@@ -65,8 +68,8 @@ describe("renderFidel Engine", () => {
   });
 
   test("should apply border to each wrapped block", () => {
-    // Each char is 2 wide + 2 kerning = 4. maxWidth 5 forces wrap.
-    const result = renderFidel("ሀለ", mockFont, { border: true, maxWidth: 5 });
+    // Each char is 2 wide + 1 kerning = 3. maxWidth 2 forces wrap.
+    const result = renderFidel("ሀለ", mockFont, { border: true, maxWidth: 2 });
     const blocks = result.split("\n\n");
     expect(blocks).toHaveLength(2);
     
