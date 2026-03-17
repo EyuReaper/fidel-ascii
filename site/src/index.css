@@ -1,0 +1,46 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  body {
+    @apply bg-terminal-black text-terminal-green font-mono overflow-x-hidden;
+  }
+}
+
+@layer components {
+  .crt-overlay {
+    @apply fixed top-0 left-0 w-full h-full pointer-events-none z-[999];
+    background: linear-gradient(
+        rgba(18, 16, 16, 0) 50%,
+        rgba(0, 0, 0, 0.25) 50%
+      ), linear-gradient(
+        90deg,
+        rgba(255, 0, 0, 0.06),
+        rgba(0, 255, 0, 0.02),
+        rgba(0, 0, 255, 0.06)
+      );
+    background-size: 100% 2px, 3px 100%;
+  }
+
+  .glow {
+    text-shadow: 0 0 5px #33ff00, 0 0 10px rgba(51, 255, 0, 0.5);
+  }
+
+  .glow-amber {
+    text-shadow: 0 0 5px #ffb000, 0 0 10px rgba(255, 176, 0, 0.5);
+  }
+
+  .ascii-border {
+    @apply border border-terminal-green relative p-6 bg-[rgba(0,20,0,0.3)];
+  }
+
+  .ascii-card {
+    @apply border border-terminal-green bg-[rgba(0,0,0,0.8)] transition-all duration-300;
+  }
+
+  .ascii-card:hover {
+    box-shadow: 0 0 15px #33ff00;
+    @apply -translate-y-1;
+  }
+}
