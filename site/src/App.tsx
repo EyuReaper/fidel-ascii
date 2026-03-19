@@ -47,6 +47,7 @@ const TRANSLATIONS = {
   am: {
     navTerminal: "ተርሚናል",
     navSource: "ምንጭ_ኮድ",
+    navSupport: "ጉርሻ_አጉርሱኝ",
     navBuilder: "ፊደል_ሰሪ",
     heroTitle: "የኢትዮጵያ",
     heroSubtitle: "ፊደል_ASCII_ሞተር",
@@ -88,6 +89,7 @@ const TRANSLATIONS = {
   en: {
     navTerminal: "TERMINAL",
     navSource: "SOURCE_CODE",
+    navSupport: "SUPPORT_PROJECT",
     navBuilder: "GLYPH_BUILDER",
     heroTitle: "THE ETHIOPIC",
     heroSubtitle: "ASCII_ENGINE",
@@ -232,6 +234,15 @@ export default function App() {
                   ★ {stars}
                 </span>
               )}
+            </a>
+            <a
+              href="https://gurshaplus.com/EyuReaper"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="hover:text-terminal-amber transition-all flex items-center gap-2 group border-b border-transparent hover:border-terminal-amber"
+            >
+              <Box size={14} /> {/* Using Box icon as a placeholder for now */}
+              {t.navSupport}
             </a>
           </nav>
         </header>
