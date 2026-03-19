@@ -233,13 +233,6 @@ export default function App() {
                 </span>
               )}
             </a>
-            <a
-              href="/builder"
-              className="hover:text-terminal-amber transition-all flex items-center gap-2 group border-b border-transparent hover:border-terminal-amber"
-            >
-              <Palette size={14} />
-              {t.navBuilder}
-            </a>
           </nav>
         </header>
 
@@ -521,22 +514,10 @@ export default function App() {
               </p>
               <div className="flex gap-8 text-[11px] font-bold opacity-60">
                 <a
-                  href="#"
-                  className="hover:text-terminal-green transition-colors"
-                >
-                  [ DOCUMENTATION ]
-                </a>
-                <a
-                  href="#"
+                  href="https://www.npmjs.com/package/fidel-ascii"
                   className="hover:text-terminal-green transition-colors"
                 >
                   [ NPM_REGISTRY ]
-                </a>
-                <a
-                  href="#"
-                  className="hover:text-terminal-green transition-colors"
-                >
-                  [ SECURITY ]
                 </a>
               </div>
             </div>
