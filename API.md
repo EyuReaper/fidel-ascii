@@ -42,6 +42,9 @@ The primary function for generating ASCII banners.
 | `border` | `boolean` | Adds a stylized ASCII border (default: `false`). |
 | `borderStyle` | `string` | `solid`, `double`, `dotted`, `bold` (default: `solid`). |
 | `borderThickness` | `number` | Thickness of the border in characters (default: `1`). |
+| `vertical` | `boolean` | Renders characters top-to-bottom (default: `false`). |
+| `inverse` | `boolean` | Swaps foreground and background characters (default: `false`). |
+| `backgroundChar` | `string` | Custom character for the background (default: `" "`). |
 
 ## Types
 

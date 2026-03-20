@@ -21,7 +21,8 @@ export function renderFidel(text: string, font: FidelFont, options: RenderOption
   const height = font.metadata.height;
   const chars = Array.from(text);
   const maxWidth = options.maxWidth || Infinity;
-  const kerning = 2;
+  const bg = options.backgroundChar || " ";
+  const isVertical = options.vertical || false;
 
   let allBlocks: string[][] = [];
   let currentBlockLines = Array(height).fill("");
@@ -29,15 +30,34 @@ export function renderFidel(text: string, font: FidelFont, options: RenderOption
 
   for (const char of chars) {
     const rawGlyph = font.glyphs[char] || getFallback(font);
-    // Trim each line of the glyph to remove unnecessary trailing whitespace
-    const glyphLines = rawGlyph.slice(0, height).map(line => line.trimEnd());
     
+    // Process glyph for inverse/background
+    let glyphLines = rawGlyph.slice(0, height).map(line => {
+      let processed = line.trimEnd();
+      if (options.inverse) {
+        // Swap █ with bg, and spaces with █
+        processed = Array.from(processed).map(c => (c === "█" ? bg : "█")).join("");
+      } else if (options.backgroundChar) {
+        // Replace spaces with custom background char
+        processed = processed.replace(/ /g, options.backgroundChar);
+      }
+      return processed;
+    });
+    
+    const glyphWidth = Math.max(...glyphLines.map(line => line.length));
+    const kerning = 1; 
+
     while (glyphLines.length < height) {
-      glyphLines.push("");
+      glyphLines.push(options.inverse ? "█".repeat(glyphWidth) : bg.repeat(glyphWidth));
+    }
+    if (isVertical) {
+      // For vertical, each character is its own block (or we could stack them)
+      // Let's stack them as separate blocks with a separator
+      const verticalGlyph = glyphLines.map(line => line.padEnd(glyphWidth, options.inverse ? "█" : bg));
+      allBlocks.push(verticalGlyph);
+      continue;
     }
 
-    const glyphWidth = Math.max(...glyphLines.map(line => line.length));
-    const kerning = 1; // Reduced from 2 for tighter feel
     const totalAddedWidth = glyphWidth + kerning;
 
     if (currentBlockWidth + totalAddedWidth > maxWidth && currentBlockWidth > 0) {
@@ -48,13 +68,15 @@ export function renderFidel(text: string, font: FidelFont, options: RenderOption
 
     for (let i = 0; i < height; i++) {
       const line = glyphLines[i] || "";
-      const paddedLine = line.padEnd(glyphWidth, " ");
-      currentBlockLines[i] += paddedLine + " ".repeat(kerning);
+      const paddedLine = line.padEnd(glyphWidth, options.inverse ? "█" : bg);
+      currentBlockLines[i] += paddedLine + (options.inverse ? "█" : bg).repeat(kerning);
     }
     currentBlockWidth += totalAddedWidth;
   }
 
-  allBlocks.push(currentBlockLines.map(l => l.trimEnd()));
+  if (!isVertical) {
+    allBlocks.push(currentBlockLines.map(l => l.trimEnd()));
+  }
 
   // Post-process blocks for shadow
   if (options.shadow) {

@@ -64,6 +64,8 @@ const TRANSLATIONS = {
     optShadow: "የ3D_ጥላ",
     optBorder: "የASCII_ፍሬም",
     optGradient: "ቀለም_ቀይር",
+    optVertical: "ቁም_አቀማመጥ",
+    optInverse: "ግልብጥ_ቀለም",
     diagnosticTitle: "የስርዓት ምርመራ",
     diagnosticText: "ሥራ ላይ ነው:: የፊደል መደበኛነት ተጠናቅቋል:: ምንም የፓኬት መጥፋት አልተገኘም::",
     installTitle: "የአሰማራ_ፕሮቶኮል // STABLE_v1.0.0",
@@ -106,6 +108,8 @@ const TRANSLATIONS = {
     optShadow: "3D_SHADOW_MAP",
     optBorder: "ASCII_FRAME_PROTOCOL",
     optGradient: "CYCLE_GRADIENT",
+    optVertical: "VERTICAL_ORIENT",
+    optInverse: "INVERSE_VIDEO",
     diagnosticTitle: "System Diagnostic",
     diagnosticText:
       "Stateless rendering active. Character normalization complete. No packet loss detected.",
@@ -197,7 +201,7 @@ export default function App() {
               <h1 className="text-2xl font-bold tracking-tighter glow flex items-center gap-2">
                 FIDEL_OS{" "}
                 <span className="text-xs bg-terminal-green text-terminal-black px-1">
-                  v1.0.0
+                  v1.1.0
                 </span>
               </h1>
               <p className="text-[10px] opacity-60 uppercase tracking-[0.4em] font-bold">
@@ -403,6 +407,22 @@ export default function App() {
                       }
                       icon={<Box size={14} />}
                       label={t.optBorder}
+                    />
+                    <ControlButton
+                      active={options.vertical}
+                      onClick={() =>
+                        setOptions((o) => ({ ...o, vertical: !o.vertical }))
+                      }
+                      icon={<Monitor size={14} />}
+                      label={t.optVertical}
+                    />
+                    <ControlButton
+                      active={options.inverse}
+                      onClick={() =>
+                        setOptions((o) => ({ ...o, inverse: !o.inverse }))
+                      }
+                      icon={<Layers size={14} />}
+                      label={t.optInverse}
                     />
                     <button
                       onClick={() =>
