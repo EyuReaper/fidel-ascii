@@ -68,14 +68,14 @@ const TRANSLATIONS = {
     optInverse: "ግልብጥ_ቀለም",
     diagnosticTitle: "የስርዓት ምርመራ",
     diagnosticText: "ሥራ ላይ ነው:: የፊደል መደበኛነት ተጠናቅቋል:: ምንም የፓኬት መጥፋት አልተገኘም::",
-    installTitle: "የአሰማራ_ፕሮቶኮል // STABLE_v1.0.0",
+    installTitle: "የአሰማራ_ፕሮቶኮል // STABLE_v1.1.0",
     step1: "ደረጃ 01: ዓለም አቀፍ ተደራሽነት",
     step2: "ደረጃ 02: የላይብረሪ ውህደት",
     copy: "ቅዳ",
     copied: "ተቀድቷል",
     footerCopyright: "© 2026 ፊደል-ASCII",
     footerRights:
-      "በ 🔥 በስሎ በ EyuReaper የቀረበ ። የኢትዮጵያ ASCII ኢንኮዲንግ ፕሮቶኮል 1.0.0።",
+      "በ 🔥 በስሎ በ EyuReaper የቀረበ ። የኢትዮጵያ ASCII ኢንኮዲንግ ፕሮቶኮል 1.1.0።",
     feature1Title: "ጥልቅ ጥላዎች",
     feature1Desc:
       "በASCII ጥላ አማካኝነት ጥልቀት ይጨምሩ:: የብርሃን ምንጮችን በማስተካከል ድንቅ ባነሮችን ይፍጠሩ::",
@@ -113,14 +113,14 @@ const TRANSLATIONS = {
     diagnosticTitle: "System Diagnostic",
     diagnosticText:
       "Stateless rendering active. Character normalization complete. No packet loss detected.",
-    installTitle: "DEPLOYMENT_PROTOCOL // STABLE_v1.0.0",
+    installTitle: "DEPLOYMENT_PROTOCOL // STABLE_v1.1.0",
     step1: "STEP_01 // Global Terminal Access",
     step2: "STEP_02 // Library Architecture Integration",
     copy: "COPY",
     copied: "COPIED",
     footerCopyright: "© 2026 NEO-ABYSSINIA DIGITAL SYSTEMS",
     footerRights:
-      "COOKED WITH 🔥 & SERVED BY EyuReaper. ETHIOPIC ASCII ENCODING PROTOCOL 1.0.0-STABLE.",
+      "COOKED WITH 🔥 & SERVED BY EyuReaper. ETHIOPIC ASCII ENCODING PROTOCOL 1.1.0-STABLE.",
     feature1Title: "Sovereign Shadows",
     feature1Desc:
       "Directional lighting effects with true 3D ASCII shading. Project depth based on virtual light sources.",
