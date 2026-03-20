@@ -27,6 +27,9 @@ const cli = meow(
 	  --direction, -d  Direction of the gradient: "horizontal", "vertical", or a degree (e.g., "45")
 	  --animate, -a    Animate the colors or light source
 	  --wrap, -w       Enable line wrapping based on terminal width
+	  --vertical, -v   Render characters vertically (top-to-bottom)
+	  --inverse, -i    Invert glyph foreground and background
+	  --bg             Custom background character (default: space)
 	  --border, -b     Add a border around the output
 	  --border-thickness  Thickness of the border (default: 1)
 	  --border-style      Style of the border: solid, double, dotted, bold (default: solid)
@@ -82,6 +85,19 @@ const cli = meow(
         type: "boolean",
         shortFlag: "w",
         default: false,
+      },
+      vertical: {
+        type: "boolean",
+        shortFlag: "v",
+        default: false,
+      },
+      inverse: {
+        type: "boolean",
+        shortFlag: "i",
+        default: false,
+      },
+      bg: {
+        type: "string",
       },
       border: {
         type: "boolean",
@@ -155,7 +171,8 @@ function getInterpolatedColor(colors: string[], t: number): { r: number; g: numb
 async function main() {
   const { 
     text, font, color, shadow, wrap, gradient, direction, animate, light,
-    border, borderThickness, borderStyle, borderColor
+    border, borderThickness, borderStyle, borderColor,
+    vertical, inverse, bg
   } = cli.flags;
 
   let fontData: FidelFont;
@@ -192,6 +209,9 @@ async function main() {
       border,
       borderThickness,
       borderStyle: borderStyle as any,
+      vertical,
+      inverse,
+      backgroundChar: bg,
     };
 
     const rawOutput = renderFidel(text, fontData, renderOptions);

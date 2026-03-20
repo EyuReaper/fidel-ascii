@@ -1,6 +1,6 @@
 {
   "name": "fidel-ascii",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "description": "The first open-source Ethiopic character map and high-impact ASCII rendering engine for terminals.",
   "type": "module",
   "bin": {

@@ -18,6 +18,12 @@ export interface RenderOptions {
   borderStyle?: "solid" | "double" | "dotted" | "bold";
   /** The color of the border. */
   borderColor?: string;
+  /** Whether to render characters vertically (top-to-bottom). */
+  vertical?: boolean;
+  /** Whether to invert the glyph (swap foreground and background). */
+  inverse?: boolean;
+  /** The character to use for the background (default is space). */
+  backgroundChar?: string;
 }
 
 export interface FidelMetadata {
