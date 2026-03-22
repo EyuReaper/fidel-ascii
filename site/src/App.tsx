@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect, useMemo, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   Terminal,
@@ -16,10 +16,12 @@ import {
   Monitor,
   Settings,
   Languages,
+  Upload,
 } from "lucide-react";
 import { renderFidel } from "./engine/render";
+import { importFontFromBuffer } from "./engine/importer";
 import standardFont from "./assets/standard.fidel.json";
-import { RenderOptions } from "./engine/types";
+import { RenderOptions, FidelFont } from "./engine/types";
 
 const FIDEL_RAIN_CHARS = "ሀለሐመሠረሰሸቀበተቸኀነኘአከኸወዐዘዠየደጀገጠጨጰጸፀፈፐ";
 
@@ -66,16 +68,25 @@ const TRANSLATIONS = {
     optGradient: "ቀለም_ቀይር",
     optVertical: "ቁም_አቀማመጥ",
     optInverse: "ግልብጥ_ቀለም",
+    optUploadFont: "ፎንት_አስገባ",
+    optStyle: "ዘይቤ_ቀይር",
+    styleBlocks: "ብሎኮች",
+    styleBraille: "ብሬይል",
+    styleDotMatrix: "ዶት_ማትሪክስ",
+    styleSketch: "ስኬች",
+    styleMatrix: "ማትሪክስ",
+    styleHalftone: "ሃልፍቶን",
+    styleSolid: "ሶሊድ",
     diagnosticTitle: "የስርዓት ምርመራ",
     diagnosticText: "ሥራ ላይ ነው:: የፊደል መደበኛነት ተጠናቅቋል:: ምንም የፓኬት መጥፋት አልተገኘም::",
-    installTitle: "የአሰማራ_ፕሮቶኮል // STABLE_v1.1.0",
+    installTitle: "የአሰማራ_ፕሮቶኮል // STABLE_v1.2.0",
     step1: "ደረጃ 01: ዓለም አቀፍ ተደራሽነት",
     step2: "ደረጃ 02: የላይብረሪ ውህደት",
     copy: "ቅዳ",
     copied: "ተቀድቷል",
     footerCopyright: "© 2026 ፊደል-ASCII",
     footerRights:
-      "በ 🔥 በስሎ በ EyuReaper የቀረበ ። የኢትዮጵያ ASCII ኢንኮዲንግ ፕሮቶኮል 1.1.0።",
+      "በ 🔥 በስሎ በ EyuReaper የቀረበ ። የኢትዮጵያ ASCII ኢንኮዲንግ ፕሮቶኮል 1.2.0።",
     feature1Title: "ጥልቅ ጥላዎች",
     feature1Desc:
       "በASCII ጥላ አማካኝነት ጥልቀት ይጨምሩ:: የብርሃን ምንጮችን በማስተካከል ድንቅ ባነሮችን ይፍጠሩ::",
@@ -110,17 +121,26 @@ const TRANSLATIONS = {
     optGradient: "CYCLE_GRADIENT",
     optVertical: "VERTICAL_ORIENT",
     optInverse: "INVERSE_VIDEO",
+    optUploadFont: "UPLOAD_CUSTOM_FONT",
+    optStyle: "SWITCH_STYLE",
+    styleBlocks: "BLOCKS",
+    styleBraille: "BRAILLE",
+    styleDotMatrix: "DOT_MATRIX",
+    styleSketch: "SKETCH",
+    styleMatrix: "MATRIX",
+    styleHalftone: "HALFTONE",
+    styleSolid: "SOLID",
     diagnosticTitle: "System Diagnostic",
     diagnosticText:
       "Stateless rendering active. Character normalization complete. No packet loss detected.",
-    installTitle: "DEPLOYMENT_PROTOCOL // STABLE_v1.1.0",
+    installTitle: "DEPLOYMENT_PROTOCOL // STABLE_v1.2.0",
     step1: "STEP_01 // Global Terminal Access",
     step2: "STEP_02 // Library Architecture Integration",
     copy: "COPY",
     copied: "COPIED",
     footerCopyright: "© 2026 NEO-ABYSSINIA DIGITAL SYSTEMS",
     footerRights:
-      "COOKED WITH 🔥 & SERVED BY EyuReaper. ETHIOPIC ASCII ENCODING PROTOCOL 1.1.0-STABLE.",
+      "COOKED WITH 🔥 & SERVED BY EyuReaper. ETHIOPIC ASCII ENCODING PROTOCOL 1.2.0-STABLE.",
     feature1Title: "Sovereign Shadows",
     feature1Desc:
       "Directional lighting effects with true 3D ASCII shading. Project depth based on virtual light sources.",
@@ -147,8 +167,29 @@ export default function App() {
   const [showInstall, setShowInstall] = useState(false);
   const [copied, setCopied] = useState<string | null>(null);
   const [stars, setStars] = useState<number | null>(null);
+  const [customFont, setCustomFont] = useState<FidelFont | null>(null);
+  const [fontBuffer, setFontBuffer] = useState<ArrayBuffer | null>(null);
+  const [isImporting, setIsImporting] = useState(false);
+  const [importStyle, setImportStyle] = useState<"blocks" | "braille" | "solid" | "halftone" | "binary" | "dot-matrix" | "sketch">("blocks");
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const t = TRANSLATIONS[lang];
+
+  useEffect(() => {
+    const runImport = async () => {
+      if (!fontBuffer) return;
+      setIsImporting(true);
+      try {
+        const font = await importFontFromBuffer(fontBuffer, { height: 10, style: importStyle });
+        setCustomFont(font);
+      } catch (err) {
+        console.error("Auto-import failed:", err);
+      } finally {
+        setIsImporting(false);
+      }
+    };
+    runImport();
+  }, [fontBuffer, importStyle]);
 
   useEffect(() => {
     fetch("https://api.github.com/repos/EyuReaper/fidel-ascii")
@@ -162,9 +203,21 @@ export default function App() {
     return () => clearInterval(interval);
   }, []);
 
+  const handleFontUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    const buffer = await file.arrayBuffer();
+    setFontBuffer(buffer);
+    // Success alert will be handled by the effect or we can just assume it's loading
+  };
+
   const renderedASCII = useMemo(() => {
-    return renderFidel(text || " ", standardFont as any, options);
-  }, [text, options]);
+    return renderFidel(text || " ", (customFont || standardFont) as any, { 
+      ...options, 
+      importStyle 
+    });
+  }, [text, options, customFont, importStyle]);
 
   const handleCopy = (cmd: string) => {
     navigator.clipboard.writeText(cmd);
@@ -201,7 +254,7 @@ export default function App() {
               <h1 className="text-2xl font-bold tracking-tighter glow flex items-center gap-2">
                 FIDEL_OS{" "}
                 <span className="text-xs bg-terminal-green text-terminal-black px-1">
-                  v1.1.0
+                  v1.2.0
                 </span>
               </h1>
               <p className="text-[10px] opacity-60 uppercase tracking-[0.4em] font-bold">
@@ -393,7 +446,7 @@ export default function App() {
 
                   <div className="grid grid-cols-1 gap-2">
                     <ControlButton
-                      active={options.shadow}
+                      active={!!options.shadow}
                       onClick={() =>
                         setOptions((o) => ({ ...o, shadow: !o.shadow }))
                       }
@@ -401,7 +454,7 @@ export default function App() {
                       label={t.optShadow}
                     />
                     <ControlButton
-                      active={options.border}
+                      active={!!options.border}
                       onClick={() =>
                         setOptions((o) => ({ ...o, border: !o.border }))
                       }
@@ -409,7 +462,7 @@ export default function App() {
                       label={t.optBorder}
                     />
                     <ControlButton
-                      active={options.vertical}
+                      active={!!options.vertical}
                       onClick={() =>
                         setOptions((o) => ({ ...o, vertical: !o.vertical }))
                       }
@@ -417,13 +470,55 @@ export default function App() {
                       label={t.optVertical}
                     />
                     <ControlButton
-                      active={options.inverse}
+                      active={!!options.inverse}
                       onClick={() =>
                         setOptions((o) => ({ ...o, inverse: !o.inverse }))
                       }
                       icon={<Layers size={14} />}
                       label={t.optInverse}
                     />
+                    
+                    <input 
+                      type="file" 
+                      ref={fileInputRef} 
+                      onChange={handleFontUpload} 
+                      className="hidden" 
+                      accept=".ttf,.otf"
+                    />
+                    <ControlButton
+                      active={!!customFont}
+                      onClick={() => customFont ? setCustomFont(null) : fileInputRef.current?.click()}
+                      icon={isImporting ? <div className="w-3 h-3 border-2 border-terminal-black border-t-transparent animate-spin rounded-full" /> : <Upload size={14} />}
+                      label={customFont ? "RESET_TO_STANDARD" : t.optUploadFont}
+                    />
+
+                    <div className="pt-4 border-t border-terminal-green/20 space-y-3">
+                      <div className="flex items-center gap-2 text-[10px] font-bold uppercase tracking-[0.2em] text-terminal-green/40">
+                        <Palette size={12} />
+                        {t.optStyle}
+                      </div>
+                      <div className="grid grid-cols-2 gap-2">
+                        {[
+                          { id: "blocks", label: t.styleBlocks },
+                          { id: "braille", label: t.styleBraille },
+                          { id: "dot-matrix", label: t.styleDotMatrix },
+                          { id: "sketch", label: t.styleSketch },
+                          { id: "binary", label: t.styleMatrix },
+                          { id: "halftone", label: t.styleHalftone },
+                          { id: "solid", label: t.styleSolid },
+                        ].map((s) => (
+                          <button
+                            key={s.id}
+                            onClick={() => setImportStyle(s.id as any)}
+                            className={`p-2 text-[9px] font-bold border transition-all ${importStyle === s.id ? "bg-terminal-green/20 border-terminal-green text-terminal-green" : "border-terminal-green/10 text-terminal-green/40 hover:border-terminal-green/30"}`}
+                          >
+                            {s.label}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+
+
                     <button
                       onClick={() =>
                         setGradientIdx((prev) => (prev + 1) % GRADIENTS.length)

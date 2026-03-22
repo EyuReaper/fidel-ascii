@@ -12,17 +12,36 @@ function getFallback(font: FidelFont): string[] {
 }
 
 /**
- * Renders a string of Ethiopic text into an ASCII banner with optional wrapping.
- * @param text - The Ethiopic string to render.
- * @param font - The font object containing glyph maps.
- * @param options - Rendering options like maxWidth.
+ * Maps standard block characters to other styles.
+ * This allows the standard font (which is blocks) to be rendered in any style.
  */
-export function renderFidel(text: string, font: FidelFont, options: RenderOptions = {}): string {
+function translateStyle(char: string, style?: string): string {
+  if (!style || style === 'blocks') return char;
+
+  const mappings: Record<string, Record<string, string>> = {
+    'dot-matrix': { '█': '●', '▓': '•', '▒': '·', '░': ' ' },
+    'sketch': { '█': 'X', '▓': '/', '▒': '\\', '░': ' ' },
+    'binary': { '█': Math.random() > 0.5 ? '1' : '0', '▓': '1', '▒': '0', '░': ' ' },
+    'solid': { '█': '█', '▓': '█', '▒': '█', '░': ' ' },
+    'halftone': { '█': '@', '▓': '#', '▒': '*', '░': '.' },
+    'braille': { '█': '⠿', '▓': '⠶', '▒': '⠤', '░': ' ' }
+  };
+
+  const map = mappings[style];
+  if (!map) return char;
+  return map[char] || (char !== ' ' ? map['█'] : ' ');
+}
+
+/**
+ * Renders a string of Ethiopic text into an ASCII banner with optional wrapping.
+ */
+export function renderFidel(text: string, font: FidelFont, options: RenderOptions & { importStyle?: string } = {}): string {
   const height = font.metadata.height;
   const chars = Array.from(text);
   const maxWidth = options.maxWidth || Infinity;
   const bg = options.backgroundChar || " ";
   const isVertical = options.vertical || false;
+  const style = options.importStyle;
 
   let allBlocks: string[][] = [];
   let currentBlockLines = Array(height).fill("");
@@ -31,14 +50,20 @@ export function renderFidel(text: string, font: FidelFont, options: RenderOption
   for (const char of chars) {
     const rawGlyph = font.glyphs[char] || getFallback(font);
     
-    // Process glyph for inverse/background
     let glyphLines = rawGlyph.slice(0, height).map(line => {
-      let processed = line.trimEnd();
+      let processed = line;
+      
+      // 1. Apply Style Translation (if needed)
+      if (style && style !== 'blocks') {
+        processed = Array.from(processed).map(c => translateStyle(c, style)).join("");
+      }
+
+      // 2. Process for inverse/background
       if (options.inverse) {
-        // Swap █ with bg, and spaces with █
-        processed = Array.from(processed).map(c => (c === "█" ? bg : "█")).join("");
+        // Any non-space becomes bg, spaces become █ (or style primary)
+        const foreground = style === 'dot-matrix' ? '●' : '█';
+        processed = Array.from(processed).map(c => (c !== " " ? bg : foreground)).join("");
       } else if (options.backgroundChar) {
-        // Replace spaces with custom background char
         processed = processed.replace(/ /g, options.backgroundChar);
       }
       return processed;
@@ -48,11 +73,10 @@ export function renderFidel(text: string, font: FidelFont, options: RenderOption
     const kerning = 1; 
 
     while (glyphLines.length < height) {
-      glyphLines.push(options.inverse ? "█".repeat(glyphWidth) : bg.repeat(glyphWidth));
+      glyphLines.push((options.inverse ? "█" : bg).repeat(glyphWidth));
     }
+
     if (isVertical) {
-      // For vertical, each character is its own block (or we could stack them)
-      // Let's stack them as separate blocks with a separator
       const verticalGlyph = glyphLines.map(line => line.padEnd(glyphWidth, options.inverse ? "█" : bg));
       allBlocks.push(verticalGlyph);
       continue;
@@ -88,13 +112,9 @@ export function renderFidel(text: string, font: FidelFont, options: RenderOption
     allBlocks = allBlocks.map(block => applyBorder(block, options));
   }
 
-  // Combine blocks into a single string
   return allBlocks.map(block => block.join("\n")).join("\n\n");
 }
 
-/**
- * Applies a border around a block of ASCII text.
- */
 function applyBorder(block: string[], options: RenderOptions): string[] {
   const thickness = options.borderThickness || 1;
   const style = options.borderStyle || "solid";
@@ -111,7 +131,6 @@ function applyBorder(block: string[], options: RenderOptions): string[] {
   
   const result: string[] = [];
 
-  // Top border
   for (let t = 0; t < thickness; t++) {
     if (t === 0) {
       result.push(chars.tl + chars.h.repeat(totalWidth - 2) + chars.tr);
@@ -120,13 +139,11 @@ function applyBorder(block: string[], options: RenderOptions): string[] {
     }
   }
 
-  // Content with side borders
   for (const line of block) {
     const paddedLine = line.padEnd(contentWidth, " ");
     result.push(chars.v + " ".repeat(thickness - 1) + paddedLine + " ".repeat(thickness - 1) + chars.v);
   }
 
-  // Bottom border
   for (let t = 0; t < thickness; t++) {
     if (t === thickness - 1) {
       result.push(chars.bl + chars.h.repeat(totalWidth - 2) + chars.br);
@@ -138,22 +155,18 @@ function applyBorder(block: string[], options: RenderOptions): string[] {
   return result;
 }
 
-/**
- * Applies a directional shadow effect based on light source.
- */
 function applyDirectionalShadow(block: string[], light: string): string[] {
   const shadowChar = "░";
   const height = block.length;
   const width = Math.max(...block.map(l => l.length));
   
-  // Create a grid for easier manipulation
   const grid = block.map(line => line.padEnd(width, " ").split(""));
   const shadowGrid: string[][] = Array.from({ length: height + 1 }, () => Array(width + 1).fill(" "));
 
   for (let y = 0; y < height; y++) {
     for (let x = 0; x < width; x++) {
-      if (grid[y][x] === "█") {
-        // Project shadow based on light direction
+      // Recognize ANY non-space character as a potential shadow caster
+      if (grid[y][x] !== " ") {
         let sx = x, sy = y;
         if (light.includes("top")) sy++;
         if (light.includes("bottom")) sy--;
@@ -162,7 +175,7 @@ function applyDirectionalShadow(block: string[], light: string): string[] {
 
         if (sx >= 0 && sx < width + 1 && sy >= 0 && sy < height + 1) {
           if (sy < height && sx < width) {
-            if (grid[sy][sx] !== "█") {
+            if (grid[sy][sx] === " ") {
               shadowGrid[sy][sx] = shadowChar;
             }
           } else {
@@ -173,12 +186,10 @@ function applyDirectionalShadow(block: string[], light: string): string[] {
     }
   }
 
-  // Merge grid and shadowGrid
   const result = grid.map((line, y) => {
-    return line.map((char, x) => (char === "█" ? "█" : shadowGrid[y][x] || " ")).join("");
+    return line.map((char, x) => (char !== " " ? char : shadowGrid[y][x] || " ")).join("");
   });
 
-  // Add the extra shadow line if it exists and contains shadow characters
   const lastShadowLine = shadowGrid[height].join("").trimEnd();
   if (lastShadowLine) {
     result.push(lastShadowLine);

@@ -12,6 +12,27 @@ function getFallback(font: FidelFont): string[] {
 }
 
 /**
+ * Maps standard block characters to other styles.
+ * This allows the standard font (which is blocks) to be rendered in any style.
+ */
+function translateStyle(char: string, style?: string): string {
+  if (!style || style === 'blocks') return char;
+
+  const mappings: Record<string, Record<string, string>> = {
+    'dot-matrix': { '█': '●', '▓': '•', '▒': '·', '░': ' ' },
+    'sketch': { '█': 'X', '▓': '/', '▒': '\\', '░': ' ' },
+    'matrix': { '█': Math.random() > 0.5 ? '1' : '0', '▓': '1', '▒': '0', '░': ' ' },
+    'solid': { '█': '█', '▓': '█', '▒': '█', '░': ' ' },
+    'halftone': { '█': '@', '▓': '#', '▒': '*', '░': '.' },
+    'braille': { '█': '⠿', '▓': '⠶', '▒': '⠤', '░': ' ' }
+  };
+
+  const map = mappings[style];
+  if (!map) return char;
+  return map[char] || (char !== ' ' ? map['█'] : ' ');
+}
+
+/**
  * Renders a string of Ethiopic text into an ASCII banner with optional wrapping.
  * @param text - The Ethiopic string to render.
  * @param font - The font object containing glyph maps.
@@ -23,6 +44,7 @@ export function renderFidel(text: string, font: FidelFont, options: RenderOption
   const maxWidth = options.maxWidth || Infinity;
   const bg = options.backgroundChar || " ";
   const isVertical = options.vertical || false;
+  const style = options.style;
 
   let allBlocks: string[][] = [];
   let currentBlockLines = Array(height).fill("");
@@ -33,10 +55,18 @@ export function renderFidel(text: string, font: FidelFont, options: RenderOption
     
     // Process glyph for inverse/background
     let glyphLines = rawGlyph.slice(0, height).map(line => {
-      let processed = line.trimEnd();
+      let processed = line;
+
+      // 1. Apply Style Translation (if needed)
+      if (style && style !== 'blocks') {
+        processed = Array.from(processed).map(c => translateStyle(c, style)).join("");
+      }
+
+      // 2. Process for inverse/background
       if (options.inverse) {
-        // Swap █ with bg, and spaces with █
-        processed = Array.from(processed).map(c => (c === "█" ? bg : "█")).join("");
+        // Swap non-spaces with bg, and spaces with █ (or style primary)
+        const foreground = style === 'dot-matrix' ? '●' : '█';
+        processed = Array.from(processed).map(c => (c !== " " ? bg : foreground)).join("");
       } else if (options.backgroundChar) {
         // Replace spaces with custom background char
         processed = processed.replace(/ /g, options.backgroundChar);
@@ -48,11 +78,9 @@ export function renderFidel(text: string, font: FidelFont, options: RenderOption
     const kerning = 1; 
 
     while (glyphLines.length < height) {
-      glyphLines.push(options.inverse ? "█".repeat(glyphWidth) : bg.repeat(glyphWidth));
+      glyphLines.push((options.inverse ? "█" : bg).repeat(glyphWidth));
     }
     if (isVertical) {
-      // For vertical, each character is its own block (or we could stack them)
-      // Let's stack them as separate blocks with a separator
       const verticalGlyph = glyphLines.map(line => line.padEnd(glyphWidth, options.inverse ? "█" : bg));
       allBlocks.push(verticalGlyph);
       continue;
@@ -152,7 +180,8 @@ function applyDirectionalShadow(block: string[], light: string): string[] {
 
   for (let y = 0; y < height; y++) {
     for (let x = 0; x < width; x++) {
-      if (grid[y][x] === "█") {
+      // Recognize ANY non-space character as a potential shadow caster
+      if (grid[y][x] !== " ") {
         // Project shadow based on light direction
         let sx = x, sy = y;
         if (light.includes("top")) sy++;
@@ -162,7 +191,7 @@ function applyDirectionalShadow(block: string[], light: string): string[] {
 
         if (sx >= 0 && sx < width + 1 && sy >= 0 && sy < height + 1) {
           if (sy < height && sx < width) {
-            if (grid[sy][sx] !== "█") {
+            if (grid[sy][sx] === " ") {
               shadowGrid[sy][sx] = shadowChar;
             }
           } else {
@@ -175,7 +204,7 @@ function applyDirectionalShadow(block: string[], light: string): string[] {
 
   // Merge grid and shadowGrid
   const result = grid.map((line, y) => {
-    return line.map((char, x) => (char === "█" ? "█" : shadowGrid[y][x] || " ")).join("");
+    return line.map((char, x) => (char !== " " ? char : shadowGrid[y][x] || " ")).join("");
   });
 
   // Add the extra shadow line if it exists and contains shadow characters

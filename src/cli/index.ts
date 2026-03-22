@@ -7,6 +7,7 @@ import chalk from "chalk";
 import gradientString from "gradient-string";
 import readline from "readline";
 import { renderFidel } from "../engine/render.js";
+import { importFont } from "../importer/font-to-fidel.js";
 import { FidelFont } from "../types.js";
 
 const __filename = fileURLToPath(import.meta.url);
@@ -16,10 +17,14 @@ const cli = meow(
   `
 	Usage
 	  $ fidel-ascii --text "ሰላም"
+	  $ fidel-ascii import --font "nyala.ttf" --output "nyala.fidel.json" --height 5 --style braille
 
 	Options
-	  --text, -t       The text to render (required)
-	  --font, -f       Path to a custom font file (optional)
+	  --text, -t       The text to render (required for rendering)
+	  --font, -f       Path to a font file (.ttf/.otf for import, .json for rendering)
+	  --output, -o     Path to save the imported font (required for import)
+	  --height, -h     The target ASCII height for import (default: 5)
+	  --style          ASCII style: blocks, braille, dot-matrix, sketch, matrix, halftone, solid (default: blocks)
 	  --color, -c      Color for the output (optional: red, green, yellow, blue, magenta, cyan, white)
 	  --shadow, -s     Add a 3D shadow effect
 	  --light, -l      Light source for shadow: top-left, top-right, top, bottom, left, right (default: top-left)
@@ -46,11 +51,23 @@ const cli = meow(
       text: {
         type: "string",
         shortFlag: "t",
-        isRequired: true,
       },
       font: {
         type: "string",
         shortFlag: "f",
+      },
+      output: {
+        type: "string",
+        shortFlag: "o",
+      },
+      height: {
+        type: "number",
+        shortFlag: "h",
+        default: 5,
+      },
+      style: {
+        type: "string",
+        default: "blocks",
       },
       color: {
         type: "string",
@@ -172,8 +189,34 @@ async function main() {
   const { 
     text, font, color, shadow, wrap, gradient, direction, animate, light,
     border, borderThickness, borderStyle, borderColor,
-    vertical, inverse, bg
+    vertical, inverse, bg, output, height, style
   } = cli.flags;
+
+  if (cli.input[0] === "import") {
+    if (!font || !output) {
+      console.error("Error: --font and --output are required for import.");
+      process.exit(1);
+    }
+    console.log(`Importing font from ${font} in ${style || "blocks"} style...`);
+    try {
+      const imported = await importFont(font, { 
+        height: height || 5,
+        style: style as any
+      });
+      fs.writeFileSync(output, JSON.stringify(imported, null, 2));
+      console.log(`Successfully saved imported font to ${output}`);
+    } catch (err: any) {
+      console.error(`Import failed: ${err.message}`);
+      process.exit(1);
+    }
+    return;
+  }
+
+  if (!text) {
+    console.error("Error: --text is required for rendering.");
+    cli.showHelp();
+    return;
+  }
 
   let fontData: FidelFont;
 
@@ -212,6 +255,7 @@ async function main() {
       vertical,
       inverse,
       backgroundChar: bg,
+      style,
     };
 
     const rawOutput = renderFidel(text, fontData, renderOptions);
@@ -285,7 +329,9 @@ async function main() {
 
         finalOutput = lines.map((line, y) => {
           return Array.from(line).map((char, x) => {
-            if (char === " " || char === "\n") return char;
+            // Skip empty characters for coloring to keep the background clean
+            if (char === " " || char === "\n" || char === "\u2800") return char;
+            
             const p = x * cos + y * sin;
             const t = (p - minP) / (maxP - minP || 1);
             const rgb = getInterpolatedColor(shiftedColors, t);
@@ -293,11 +339,29 @@ async function main() {
           }).join("");
         }).join("\n");
       } else if (direction === "vertical") {
-        const g = (gradientString as any)(shiftedColors);
-        finalOutput = g.multiline(rawOutput);
+        // For vertical gradients in Braille, we avoid gradient-string's multiline
+        // and use our own more precise row-based interpolation
+        const lines = rawOutput.split("\n");
+        finalOutput = lines.map((line, y) => {
+          const t = y / (lines.length - 1 || 1);
+          const rgb = getInterpolatedColor(shiftedColors, t);
+          return Array.from(line).map(char => {
+             if (char === " " || char === "\u2800") return char;
+             return chalk.rgb(rgb.r, rgb.g, rgb.b)(char);
+          }).join("");
+        }).join("\n");
       } else {
-        const g = (gradientString as any)(shiftedColors);
-        finalOutput = g(rawOutput);
+        // Horizontal gradient
+        const lines = rawOutput.split("\n");
+        finalOutput = lines.map(line => {
+          const chars = Array.from(line);
+          return chars.map((char, x) => {
+            if (char === " " || char === "\u2800") return char;
+            const t = x / (line.length - 1 || 1);
+            const rgb = getInterpolatedColor(shiftedColors, t);
+            return chalk.rgb(rgb.r, rgb.g, rgb.b)(char);
+          }).join("");
+        }).join("\n");
       }
     } else {
       finalOutput = (chalk as any)[color] ? (chalk as any)[color](coloredOutput) : coloredOutput;

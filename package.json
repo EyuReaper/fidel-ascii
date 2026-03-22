@@ -1,6 +1,6 @@
 {
   "name": "fidel-ascii",
-  "version": "1.1.0",
+  "version": "1.2.0",
   "description": "The first open-source Ethiopic character map and high-impact ASCII rendering engine for terminals.",
   "type": "module",
   "bin": {
@@ -28,9 +28,11 @@
   "license": "MIT",
   "dependencies": {
     "@types/node": "^22.0.0",
+    "@types/opentype.js": "^1.3.9",
     "chalk": "^5.0.0",
     "gradient-string": "^3.0.0",
-    "meow": "^13.0.0"
+    "meow": "^13.0.0",
+    "opentype.js": "^1.3.4"
   },
   "devDependencies": {
     "@types/gradient-string": "^1.1.6",

@@ -45,6 +45,7 @@ The primary function for generating ASCII banners.
 | `vertical` | `boolean` | Renders characters top-to-bottom (default: `false`). |
 | `inverse` | `boolean` | Swaps foreground and background characters (default: `false`). |
 | `backgroundChar` | `string` | Custom character for the background (default: `" "`). |
+| `style` | `string` | ASCII style: `blocks`, `braille`, `dot-matrix`, `sketch`, `matrix`, `halftone`, `solid` (default: `blocks`). |
 
 ## Types
 

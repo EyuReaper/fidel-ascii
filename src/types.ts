@@ -24,6 +24,8 @@ export interface RenderOptions {
   inverse?: boolean;
   /** The character to use for the background (default is space). */
   backgroundChar?: string;
+  /** The ASCII style to use for rendering (e.g., blocks, dot-matrix, sketch). */
+  style?: "blocks" | "braille" | "dot-matrix" | "sketch" | "matrix" | "halftone" | "solid";
 }
 
 export interface FidelMetadata {

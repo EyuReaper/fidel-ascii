@@ -129,6 +129,22 @@ button:active { transform: translateY(0); }
   border-radius: 2px;
 }
 
+.font-upload {
+  margin-bottom: 1.5rem;
+  padding-bottom: 1.5rem;
+  border-bottom: 1px solid #334155;
+}
+
+.font-upload input[type="file"] {
+  padding: 0.5rem;
+  font-size: 0.8rem;
+}
+
+.font-upload button {
+  margin-top: 0.5rem;
+  width: 100%;
+}
+
 .load-ghost-controls {
   padding: 1.5rem;
   background: #1e293b;
